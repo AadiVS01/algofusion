@@ -99,7 +99,9 @@ export async function queryRAGGroq(patientId, query, historyContext) {
     messages: [
       {
         role: "system",
-        content: "You are a clinical assistant. Use patient history and medical protocols to answer queries concisely. STRICT REQUIREMENT: Always respond in English."
+        content: `You are a clinical assistant. Use the PATIENT PROFILE (Allergies, History, Background), PAST SESSIONS, and MEDICAL PROTOCOLS to answer queries concisely. 
+        PRIORITY: If the query relates to medications or treatment, always cross-reference the PATIENT PROFILE for potential risks or allergies. 
+        STRICT REQUIREMENT: Always respond in English.`
       },
       {
         role: "user",

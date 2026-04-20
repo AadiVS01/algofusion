@@ -19,6 +19,10 @@ export default async function handler(req, res) {
     const medicalReference = await queryMedicalKB(vector);
     const medicalContext = medicalReference.map(m => m.text).join('\n');
     
+    // 3. Query Supabase for Patient Memory
+    const historyData = await getSessions(patientId);
+    const historyContext = JSON.stringify(historyData);
+
     // 4. Query Patient Meta (Allergies/Conditions)
     const patientProfile = await getPatientProfile(patientId);
     

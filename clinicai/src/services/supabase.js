@@ -60,3 +60,18 @@ export async function getPatientProfile(patientId) {
   
   return data;
 }
+
+export async function createPatient(patientData) {
+  const { data, error } = await supabase
+    .from('patients')
+    .insert([patientData])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`[ClinicAI | DB] - Patient REGISTRATION FAILED. Error:`, error.message);
+    throw error;
+  }
+  
+  return data;
+}

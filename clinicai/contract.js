@@ -53,3 +53,12 @@ export async function getPatientProfile(patientId) {
   if (!response.ok) return null;
   return await response.json();
 }
+
+export async function registerPatient(patientData) {
+  const response = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patientData)
+  });
+  return await response.json();
+}

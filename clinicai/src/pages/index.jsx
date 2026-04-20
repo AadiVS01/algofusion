@@ -8,8 +8,7 @@ export default function Home() {
   const router = useRouter();
 
   const handleCreateNew = () => {
-    const newId = 'P' + Math.floor(10000 + Math.random() * 90000);
-    router.push(`/consult?patientId=${newId}`);
+    router.push('/register');
   };
 
   return (

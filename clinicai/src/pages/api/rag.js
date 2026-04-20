@@ -1,6 +1,6 @@
 import { queryRAGGroq } from '@/services/groq';
 import { getEmbeddings } from '@/services/gemini';
-import { getSessions } from '@/services/supabase';
+import { getSessions, getPatientProfile } from '@/services/supabase';
 import { queryMedicalKB } from '@/services/pinecone';
 
 export default async function handler(req, res) {
@@ -17,7 +17,10 @@ export default async function handler(req, res) {
     const medicalReference = await queryMedicalKB(vector);
     
     // 3. Combined Query
+    const patientProfile = await getPatientProfile(patientId);
+    
     const combinedContext = {
+      patient_profile: patientProfile,
       patient_history: history,
       medical_protocols: medicalReference
     };
