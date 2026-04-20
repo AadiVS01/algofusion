@@ -6,6 +6,7 @@ import ConsultationView from '@/components/ConsultationView';
 import StructuredOutput from '@/components/StructuredOutput';
 import FlagsPanel from '@/components/FlagsPanel';
 import useVoiceRecorder from '@/hooks/useVoiceRecorder';
+import RAGChatbot from '@/components/RAGChatbot';
 import { transcribeAudio, extractStructured, saveSession } from '../../contract';
 
 export default function ConsultPage() {
@@ -17,6 +18,7 @@ export default function ConsultPage() {
   const [liveTranscript, setLiveTranscript] = useState('');
   const [structuredData, setStructuredData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isEditingData, setIsEditingData] = useState(false);
 
   // Sync live transcript from hook
   useEffect(() => {
@@ -48,6 +50,27 @@ export default function ConsultPage() {
     }
   };
 
+  const handleUpdateData = (newData) => {
+    setStructuredData(newData);
+  };
+
+  const handleRemoveMed = (idx) => {
+    setStructuredData(prev => ({
+      ...prev,
+      medications: prev.medications.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleAddMed = () => {
+    setStructuredData(prev => ({
+      ...prev,
+      medications: [
+        ...(prev.medications || []),
+        { name: '', dosage: '', frequency: '', timing: '', duration: '', flag: false }
+      ]
+    }));
+  };
+
   const handleAddSuggestion = (suggestion) => {
     setStructuredData(prev => ({
       ...prev,
@@ -63,6 +86,7 @@ export default function ConsultPage() {
     try {
       await saveSession(patientId || 'P12345', structuredData);
       alert('Session saved successfully!');
+      setIsEditingData(false);
     } catch (error) {
       alert('Failed to save session');
     }
@@ -87,6 +111,16 @@ export default function ConsultPage() {
           </div>
         </div>
         <div className="flex items-center space-x-3">
+          {structuredData && (
+            <button 
+              onClick={() => setIsEditingData(!isEditingData)}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                isEditingData ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {isEditingData ? 'Finish Editing' : 'Edit Findings'}
+            </button>
+          )}
           <button 
             onClick={handleSave}
             disabled={!structuredData}
@@ -97,55 +131,72 @@ export default function ConsultPage() {
         </div>
       </nav>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto p-8 space-y-8">
-        <section className="space-y-6">
-          <ConsultationView 
-            isRecording={isRecording} 
-            startRecording={startRecording} 
-            stopRecording={stopRecording} 
-            transcript={liveTranscript} 
-          />
-          
-          <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm">
-                <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
-                <p className="text-gray-600">{isRecording ? 'Recording and analyzing...' : 'Standby'}</p>
-              </div>
-              {isProcessing && (
-                <div className="flex items-center space-x-2 text-sm text-indigo-600 font-bold">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>AI Orchestration in progress...</span>
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Active Consultation */}
+        <div className="lg:col-span-2 space-y-8">
+          <section className="space-y-6">
+            <ConsultationView 
+              isRecording={isRecording} 
+              startRecording={startRecording} 
+              stopRecording={stopRecording} 
+              transcript={liveTranscript} 
+            />
+            
+            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                  <p className="text-gray-600">{isRecording ? 'Recording and analyzing...' : 'Standby'}</p>
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {structuredData && (
-          <section className="bg-indigo-50 border border-indigo-100 p-8 rounded-3xl space-y-6">
-            <div className="flex items-center justify-between border-b border-indigo-100 pb-6">
-              <div>
-                <h3 className="text-2xl font-extrabold text-indigo-900 tracking-tight">Structured Clinical Output</h3>
-                <p className="text-sm text-indigo-600 mt-1 font-medium">Auto-extracted from consultation audio</p>
+                {isProcessing && (
+                  <div className="flex items-center space-x-2 text-sm text-indigo-600 font-bold">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>AI Orchestration in progress...</span>
+                  </div>
+                )}
               </div>
-              <span className={`px-4 py-1.5 text-xs font-black uppercase rounded-full shadow-sm ${
-                structuredData.confidence === 'high' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
-              }`}>
-                {structuredData.confidence} Confidence
-              </span>
-            </div>
-            
-            <StructuredOutput data={{...structuredData, onAddSuggestion: handleAddSuggestion}} />
-            
-            <div className="pt-4 border-t border-indigo-100">
-              <FlagsPanel flags={structuredData.flags} />
             </div>
           </section>
-        )}
+
+          {structuredData && (
+            <section className="bg-indigo-50 border border-indigo-100 p-8 rounded-3xl space-y-6">
+              <div className="flex items-center justify-between border-b border-indigo-100 pb-6">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-indigo-900 tracking-tight">Structured Clinical Output</h3>
+                  <p className="text-sm text-indigo-600 mt-1 font-medium">Auto-extracted from consultation audio</p>
+                </div>
+                <span className={`px-4 py-1.5 text-xs font-black uppercase rounded-full shadow-sm ${
+                  structuredData.confidence === 'high' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
+                }`}>
+                  {structuredData.confidence} Confidence
+                </span>
+              </div>
+              
+              <StructuredOutput 
+                data={{...structuredData, onAddSuggestion: handleAddSuggestion}} 
+                isEditing={isEditingData}
+                onUpdate={handleUpdateData}
+                onRemoveMed={handleRemoveMed}
+                onAddMed={handleAddMed}
+              />
+              
+              <div className="pt-4 border-t border-indigo-100">
+                <FlagsPanel flags={structuredData.flags} />
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* Right Column: RAG Assistant */}
+        <aside className="lg:col-span-1 border-l border-gray-100 pl-0 lg:pl-4">
+          <div className="sticky top-24">
+            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Patient Brain (RAG)</h4>
+            <RAGChatbot patientId={patientId || 'P12345'} />
+          </div>
+        </aside>
       </main>
     </div>
   );

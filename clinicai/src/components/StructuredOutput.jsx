@@ -1,36 +1,117 @@
 import React from 'react';
 
-export default function StructuredOutput({ data }) {
+export default function StructuredOutput({ data, isEditing, onUpdate, onRemoveMed, onAddMed }) {
   if (!data) return null;
 
+  const handleChange = (field, value) => {
+    onUpdate({ ...data, [field]: value });
+  };
+
+  const handleMedChange = (idx, field, value) => {
+    const newMeds = [...data.medications];
+    newMeds[idx] = { ...newMeds[idx], [field]: value };
+    onUpdate({ ...data, medications: newMeds });
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 relative">
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-4">Diagnosis & Complaint</h3>
         <div className="mb-4">
           <label className="text-xs text-gray-500 font-medium">Chief Complaint</label>
-          <p className="text-lg font-semibold text-gray-800">{data.chief_complaint}</p>
+          {isEditing ? (
+            <input 
+              type="text" 
+              value={data.chief_complaint || ''} 
+              onChange={(e) => handleChange('chief_complaint', e.target.value)}
+              className="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-gray-800">{data.chief_complaint}</p>
+          )}
         </div>
         <div>
           <label className="text-xs text-gray-500 font-medium">Diagnosis</label>
-          <p className="text-lg font-semibold text-green-700">{data.diagnosis}</p>
+          {isEditing ? (
+            <textarea 
+              value={data.diagnosis || ''} 
+              onChange={(e) => handleChange('diagnosis', e.target.value)}
+              className="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none h-24"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-green-700">{data.diagnosis}</p>
+          )}
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-4">Medications</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-widest">Medications</h3>
+          {isEditing && (
+            <button 
+              onClick={onAddMed}
+              className="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded font-black uppercase hover:bg-indigo-700 transition-colors"
+            >
+              + Add Med
+            </button>
+          )}
+        </div>
         <div className="space-y-3">
           {data.medications?.map((med, idx) => (
-            <div key={idx} className={`p-3 rounded-lg border ${med.flag ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
-              <div className="flex justify-between items-start">
-                <span className="font-bold text-gray-800">{med.name}</span>
-                {med.flag && <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">Flagged</span>}
-              </div>
-              <div className="text-xs text-gray-600 mt-1">
-                {med.dosage} • {med.frequency} • {med.timing && <span className="font-bold text-indigo-500">{med.timing}</span>} • {med.duration}
+            <div key={idx} className={`p-4 rounded-lg border relative group ${med.flag ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+              {isEditing && (
+                <button 
+                  onClick={() => onRemoveMed(idx)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 scale-0 group-hover:scale-100 transition-transform"
+                >
+                  &times;
+                </button>
+              )}
+              
+              <div className="flex flex-col space-y-2">
+                {isEditing ? (
+                  <>
+                    <input 
+                      type="text" 
+                      value={med.name || ''} 
+                      placeholder="Drug Name"
+                      onChange={(e) => handleMedChange(idx, 'name', e.target.value)}
+                      className="bg-white border border-gray-200 rounded text-sm font-black p-1 pl-2 outline-none focus:ring-1 focus:ring-indigo-400"
+                    />
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <input 
+                        type="text" 
+                        value={med.dosage || ''} 
+                        placeholder="Dosage"
+                        onChange={(e) => handleMedChange(idx, 'dosage', e.target.value)}
+                        className="bg-white border border-gray-200 rounded text-[10px] p-1 pl-2 outline-none"
+                      />
+                      <input 
+                        type="text" 
+                        value={med.frequency || ''} 
+                        placeholder="Frequency"
+                        onChange={(e) => handleMedChange(idx, 'frequency', e.target.value)}
+                        className="bg-white border border-gray-200 rounded text-[10px] p-1 pl-2 outline-none"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start">
+                      <span className="font-bold text-gray-800">{med.name}</span>
+                      {med.flag && <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">Flagged</span>}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {med.dosage} • {med.frequency} • {med.timing && <span className="font-bold text-indigo-500">{med.timing}</span>} • {med.duration}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ))}
+          {(!data.medications || data.medications.length === 0) && (
+            <p className="text-center text-xs text-gray-400 italic py-4">No medications extracted.</p>
+          )}
         </div>
       </div>
 

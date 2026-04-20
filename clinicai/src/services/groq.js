@@ -100,7 +100,7 @@ export async function queryRAGGroq(patientId, query, historyContext) {
         `
       }
     ],
-    model: "llama-3.1-70b-versatile"
+    model: "llama-3.3-70b-versatile"
   });
 
   return completion.choices[0].message.content;

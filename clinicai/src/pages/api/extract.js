@@ -9,6 +9,9 @@ export default async function handler(req, res) {
   const { transcript, patientId } = req.body;
 
   try {
+    console.log(`[ClinicAI | AI] - Starting extraction pipeline for Patient: ${patientId}`);
+    console.log(`[ClinicAI | AI] - Transcript length: ${transcript.length} characters.`);
+
     // 1. Get embeddings for the transcript
     const vector = await getEmbeddings(transcript);
     
@@ -23,9 +26,10 @@ export default async function handler(req, res) {
     // 4. Extract with Full Context (via Groq)
     const data = await extractStructuredGroq(transcript, medicalContext, historyContext);
     
+    console.log(`[ClinicAI | AI] - Extraction SUCCESS for Patient: ${patientId}`);
     res.status(200).json(data);
   } catch (error) {
-    console.error(error);
+    console.error(`[ClinicAI | AI] - Extraction FAILED for Patient: ${patientId}. Error:`, error.message);
     res.status(500).json({ message: error.message });
   }
 }

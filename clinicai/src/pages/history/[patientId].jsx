@@ -1,16 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import PatientHistory from '@/components/PatientHistory';
 import RAGChatbot from '@/components/RAGChatbot';
 
-// Import mock data
-import sessionsData from '../../../mock/sessions.json';
-
 export default function HistoryPage() {
   const router = useRouter();
   const { patientId } = router.query;
+  const [sessions, setSessions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (patientId) {
+      fetch(`/api/sessions?patientId=${patientId}`)
+        .then(res => res.json())
+        .then(data => {
+          setSessions(data);
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching history:", err);
+          setIsLoading(false);
+        });
+    }
+  }, [patientId]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -53,7 +67,13 @@ export default function HistoryPage() {
             </div>
           </div>
           
-          <PatientHistory sessions={sessionsData} />
+          {isLoading ? (
+            <div className="flex justify-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <PatientHistory sessions={sessions} />
+          )}
         </div>
 
         {/* Right: AI RAG Assistant */}
