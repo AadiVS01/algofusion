@@ -1,0 +1,23 @@
+[
+  {
+    "session_id": "S001",
+    "date": "2026-03-10",
+    "diagnosis": "Common Cold",
+    "medications": ["Ctzine 10mg"],
+    "summary": "Patient had mild congestion and throat pain."
+  },
+  {
+    "session_id": "S002",
+    "date": "2026-03-25",
+    "diagnosis": "Indigestion",
+    "medications": ["Pantoprazole 40mg"],
+    "summary": "Patient complained of stomach ache after travel."
+  },
+  {
+    "session_id": "S003",
+    "date": "2026-04-10",
+    "diagnosis": "Knee Pain",
+    "medications": ["Ibuprofen 200mg"],
+    "summary": "Mild swelling in right knee after exercise."
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "patient_name": "Ramesh Patil",
+  "patient_id": "P12345",
+  "age": 42,
+  "gender": "M",
+  "visit_type": "OPD",
+  "raw_transcript": "Doctor: Namaste Ramesh ji, kay jhalay? Ramesh: Namaste doctor, mujhe teen din se continuous fever hai aani doka dukhat aahe. Doctor: Thand lagte ka? Cold? Ramesh: Ho, thand vajte ratri. Doctor: Kuch aur? Ramesh: Bhook nahi lag rahi. I feel very weak. Doctor: Okay, let me check your fever. Temperature 102 hai. Aap wo wali tablet lijiye jo pichli baar di thi, and ek paracetamol start kijiye.",
+  "extracted_data": {
+    "language_detected": "hi-mr-en",
+    "chief_complaint": "Persistent fever and headache for 3 days",
+    "symptoms": ["Fever (102 F)", "Headache", "Chills (at night)", "Loss of appetite", "Weakness"],
+    "duration": "3 days",
+    "diagnosis": "Viral Fever (suspected)",
+    "medications": [
+      {
+        "name": "[UNCLEAR: wo wali tablet]",
+        "dosage": "As previously prescribed",
+        "frequency": "Unknown",
+        "duration": "Unknown",
+        "flag": true
+      },
+      {
+        "name": "Paracetamol",
+        "dosage": "500mg",
+        "frequency": "Thrice a day",
+        "duration": "5 days",
+        "flag": false
+      }
+    ],
+    "follow_up": "Check back in 3 days if fever persists",
+    "flags": ["wo wali tablet - unclear medication reference", "missing: allergy history", "missing: weight"],
+    "confidence": "medium"
+  }
+}
