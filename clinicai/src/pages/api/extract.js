@@ -1,6 +1,31 @@
-// src/pages/api/extract.js
+import { extractStructuredGroq } from '@/services/groq';
+import { getEmbeddings } from '@/services/gemini';
+import { queryMedicalKB } from '@/services/pinecone';
+import { getSessions } from '@/services/supabase';
+
 export default async function handler(req, res) {
-  // System Prompt for Clinical AI included in implementation notes.
-  // TODO: Implement Gemini 1.5 Flash Extraction
-  res.status(200).json({ message: "Extraction endpoint skeleton" });
+  if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
+
+  const { transcript, patientId } = req.body;
+
+  try {
+    // 1. Get embeddings for the transcript
+    const vector = await getEmbeddings(transcript);
+    
+    // 2. Query Pinecone for Medical Wisdom (Parallel-ish)
+    const medicalReference = await queryMedicalKB(vector);
+    const medicalContext = medicalReference.map(m => m.text).join('\n');
+    
+    // 3. Query Supabase for Patient Memory
+    const historyData = await getSessions(patientId);
+    const historyContext = JSON.stringify(historyData);
+
+    // 4. Extract with Full Context (via Groq)
+    const data = await extractStructuredGroq(transcript, medicalContext, historyContext);
+    
+    res.status(200).json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 }
