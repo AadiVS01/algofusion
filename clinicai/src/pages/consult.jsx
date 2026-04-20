@@ -8,6 +8,8 @@ import FlagsPanel from '@/components/FlagsPanel';
 import useVoiceRecorder from '@/hooks/useVoiceRecorder';
 import RAGChatbot from '@/components/RAGChatbot';
 import { transcribeAudio, extractStructured, saveSession } from '../../contract';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ConsultPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function ConsultPage() {
   const [structuredData, setStructuredData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingData, setIsEditingData] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Sync live transcript from hook
   useEffect(() => {
@@ -85,11 +88,72 @@ export default function ConsultPage() {
   const handleSave = async () => {
     try {
       await saveSession(patientId || 'P12345', structuredData);
+      setIsSaved(true);
       alert('Session saved successfully!');
       setIsEditingData(false);
     } catch (error) {
       alert('Failed to save session');
     }
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const timestamp = new Date().toLocaleString();
+    
+    // Header
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("CLINIC AI | MEDICAL PRESCRIPTION", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${timestamp}`, 14, 30);
+    doc.text(`Patient ID: ${patientId || 'P12345'}`, 14, 35);
+    
+    // Horizontal Line
+    doc.setLineWidth(0.5);
+    doc.line(14, 40, 196, 40);
+    
+    // Clinical Details
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Chief Complaint:", 14, 50);
+    doc.setFont("helvetica", "normal");
+    doc.text(structuredData.chief_complaint || "N/A", 60, 50);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("Diagnosis:", 14, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(structuredData.diagnosis || "N/A", 60, 60);
+    
+    // Medications Table
+    if (structuredData.medications && structuredData.medications.length > 0) {
+      doc.text("Medications:", 14, 75);
+      autoTable(doc, {
+        startY: 80,
+        head: [['Medicine', 'Dosage', 'Frequency', 'Timing', 'Duration']],
+        body: structuredData.medications.map(m => [
+          m.name, m.dosage, m.frequency, m.timing, m.duration
+        ]),
+        theme: 'striped',
+        headStyles: { fillStyle: 'black', fillColor: [0, 0, 0] },
+      });
+    }
+    
+    // Footer / Follow up
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : 100;
+    doc.setFont("helvetica", "bold");
+    doc.text("Follow up / Advice:", 14, finalY);
+    doc.setFont("helvetica", "normal");
+    doc.text(structuredData.follow_up || "General rest and hydration.", 14, finalY + 10, { maxWidth: 180 });
+    
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text("e-Signed by ClinicAI Orchestrator", 14, 280);
+    
+    doc.save(`Prescription_${patientId || 'Patient'}_${new Date().getTime()}.pdf`);
   };
 
   return (
@@ -111,6 +175,17 @@ export default function ConsultPage() {
           </div>
         </div>
         <div className="flex items-center space-x-3">
+          {isSaved && (
+            <button 
+              onClick={generatePDF}
+              className="px-4 py-2 bg-black text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Download PDF</span>
+            </button>
+          )}
           {structuredData && (
             <button 
               onClick={() => setIsEditingData(!isEditingData)}
@@ -123,10 +198,10 @@ export default function ConsultPage() {
           )}
           <button 
             onClick={handleSave}
-            disabled={!structuredData}
+            disabled={!structuredData || isSaved}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg disabled:opacity-50"
           >
-            Save Session
+            {isSaved ? 'Session Archived' : 'Save Session'}
           </button>
         </div>
       </nav>
