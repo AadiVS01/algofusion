@@ -14,95 +14,155 @@ export default function StructuredOutput({ data, isEditing, onUpdate, onRemoveMe
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 relative">
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-4">Diagnosis & Complaint</h3>
-        <div className="mb-4">
-          <label className="text-xs text-gray-500 font-medium">Chief Complaint</label>
-          {isEditing ? (
-            <input 
-              type="text" 
-              value={data.chief_complaint || ''} 
-              onChange={(e) => handleChange('chief_complaint', e.target.value)}
-              className="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          ) : (
-            <p className="text-lg font-semibold text-gray-800">{data.chief_complaint}</p>
-          )}
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-[0.5px] border-black bg-white">
+      {/* Section I: Findings */}
+      <div className="p-8 border-b-[0.5px] md:border-b-0 md:border-r-[0.5px] border-black space-y-8">
         <div>
-          <label className="text-xs text-gray-500 font-medium">Diagnosis</label>
-          {isEditing ? (
-            <textarea 
-              value={data.diagnosis || ''} 
-              onChange={(e) => handleChange('diagnosis', e.target.value)}
-              className="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none h-24"
-            />
-          ) : (
-            <p className="text-lg font-semibold text-green-700">{data.diagnosis}</p>
-          )}
+          <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6">Section I: Findings</h3>
+          
+          <div className="mb-8">
+            <label className="text-[11px] font-black uppercase text-black mb-2 block">Chief Complaint</label>
+            {isEditing ? (
+              <input 
+                type="text" 
+                value={data.chief_complaint || ''} 
+                onChange={(e) => handleChange('chief_complaint', e.target.value)}
+                className="w-full bg-white border-b border-black py-2 text-3xl font-light focus:outline-none tracking-tight"
+              />
+            ) : (
+              <p className="text-3xl font-black text-black leading-none tracking-tighter">{data.chief_complaint}</p>
+            )}
+          </div>
+          
+          <div className="mb-8">
+            <label className="text-[11px] font-black uppercase text-black mb-2 block">Clinical Diagnosis</label>
+            {isEditing ? (
+              <textarea 
+                value={data.diagnosis || ''} 
+                onChange={(e) => handleChange('diagnosis', e.target.value)}
+                className="w-full bg-white border border-black p-4 text-xl font-light focus:outline-none min-h-[160px] leading-relaxed"
+              />
+            ) : (
+              <p className="text-xl font-light text-black leading-relaxed tracking-tight">{data.diagnosis}</p>
+            )}
+          </div>
+
+          {/* New: Follow-up Edit in Findings Column */}
+          <div>
+            <label className="text-[11px] font-black uppercase text-black mb-2 block">Follow-up / Advice</label>
+            {isEditing ? (
+              <textarea 
+                value={data.follow_up || ''} 
+                onChange={(e) => handleChange('follow_up', e.target.value)}
+                placeholder="Enter follow-up instructions..."
+                className="w-full bg-white border-b border-black py-2 text-sm font-light focus:outline-none tracking-tight min-h-[80px]"
+              />
+            ) : (
+              <p className="text-sm font-light text-black leading-relaxed italic">{data.follow_up || "General rest and hydration advised."}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-widest">Medications</h3>
+      {/* Section II: Prescription */}
+      <div className="p-8 space-y-8 bg-white">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-gray-400">Section II: Prescription</h3>
           {isEditing && (
             <button 
               onClick={onAddMed}
-              className="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded font-black uppercase hover:bg-indigo-700 transition-colors"
+              className="text-[11px] bg-black text-white px-3 py-1 font-black uppercase tracking-widest hover:bg-gray-900 transition-colors"
             >
-              + Add Med
+              + New Entry
             </button>
           )}
         </div>
-        <div className="space-y-3">
+        
+        <div className="space-y-6">
           {data.medications?.map((med, idx) => (
-            <div key={idx} className={`p-4 rounded-lg border relative group ${med.flag ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+            <div key={idx} className="pb-8 border-b-[0.5px] border-gray-100 last:border-0 relative group">
               {isEditing && (
                 <button 
                   onClick={() => onRemoveMed(idx)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 scale-0 group-hover:scale-100 transition-transform"
+                  className="absolute -top-1 -right-1 bg-black text-white w-5 h-5 text-[12px] flex items-center justify-center hover:bg-gray-800 transition-all opacity-0 group-hover:opacity-100 z-10"
                 >
                   &times;
                 </button>
               )}
               
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col space-y-3">
                 {isEditing ? (
-                  <>
-                    <input 
-                      type="text" 
-                      value={med.name || ''} 
-                      placeholder="Drug Name"
-                      onChange={(e) => handleMedChange(idx, 'name', e.target.value)}
-                      className="bg-white border border-gray-200 rounded text-sm font-black p-1 pl-2 outline-none focus:ring-1 focus:ring-indigo-400"
-                    />
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <input 
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                       <input 
                         type="text" 
-                        value={med.dosage || ''} 
-                        placeholder="Dosage"
-                        onChange={(e) => handleMedChange(idx, 'dosage', e.target.value)}
-                        className="bg-white border border-gray-200 rounded text-[10px] p-1 pl-2 outline-none"
+                        value={med.name || ''} 
+                        placeholder="Medication Name"
+                        onChange={(e) => handleMedChange(idx, 'name', e.target.value)}
+                        className="flex-1 bg-white border-b border-black text-lg font-black p-1 outline-none"
                       />
-                      <input 
-                        type="text" 
-                        value={med.frequency || ''} 
-                        placeholder="Frequency"
-                        onChange={(e) => handleMedChange(idx, 'frequency', e.target.value)}
-                        className="bg-white border border-gray-200 rounded text-[10px] p-1 pl-2 outline-none"
-                      />
+                      <button 
+                        onClick={() => handleMedChange(idx, 'flag', !med.flag)}
+                        className={`text-[9px] px-2 py-1 font-black border ${med.flag ? 'bg-black text-white' : 'bg-white text-black'}`}
+                      >
+                        {med.flag ? 'FLAGGED' : 'FLAG'}
+                      </button>
                     </div>
-                  </>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black uppercase text-gray-400">Dosage</span>
+                        <input 
+                          type="text" 
+                          value={med.dosage || ''} 
+                          placeholder="E.g. 500mg"
+                          onChange={(e) => handleMedChange(idx, 'dosage', e.target.value)}
+                          className="w-full bg-white border-b border-gray-200 text-sm p-1 outline-none font-light"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                         <span className="text-[8px] font-black uppercase text-gray-400">Frequency</span>
+                        <input 
+                          type="text" 
+                          value={med.frequency || ''} 
+                          placeholder="E.g. Twice a day"
+                          onChange={(e) => handleMedChange(idx, 'frequency', e.target.value)}
+                          className="w-full bg-white border-b border-gray-200 text-sm p-1 outline-none font-light"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black uppercase text-gray-400">Timing</span>
+                        <input 
+                          type="text" 
+                          value={med.timing || ''} 
+                          placeholder="E.g. After Lunch"
+                          onChange={(e) => handleMedChange(idx, 'timing', e.target.value)}
+                          className="w-full bg-white border-b border-gray-200 text-sm p-1 outline-none font-light"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black uppercase text-gray-400">Duration</span>
+                        <input 
+                          type="text" 
+                          value={med.duration || ''} 
+                          placeholder="E.g. 5 Days"
+                          onChange={(e) => handleMedChange(idx, 'duration', e.target.value)}
+                          className="w-full bg-white border-b border-gray-200 text-sm p-1 outline-none font-light"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-gray-800">{med.name}</span>
-                      {med.flag && <span className="px-2 py-0.5 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">Flagged</span>}
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className="font-black text-black uppercase tracking-tight text-lg">{med.name}</span>
+                      {med.flag && <span className="text-[10px] font-black underline decoration-2">FLAGGED</span>}
                     </div>
-                    <div className="text-xs text-gray-600">
-                      {med.dosage} • {med.frequency} • {med.timing && <span className="font-bold text-indigo-500">{med.timing}</span>} • {med.duration}
+                    <div className="text-[11px] font-light text-gray-500 tracking-wide uppercase">
+                      {med.dosage} • {med.frequency} • {med.timing && <span className="text-black font-black">{med.timing}</span>} • {med.duration}
                     </div>
                   </>
                 )}
@@ -110,36 +170,32 @@ export default function StructuredOutput({ data, isEditing, onUpdate, onRemoveMe
             </div>
           ))}
           {(!data.medications || data.medications.length === 0) && (
-            <p className="text-center text-xs text-gray-400 italic py-4">No medications extracted.</p>
+            <p className="text-center text-[10px] font-black text-gray-300 uppercase tracking-widest py-8 border-[0.5px] border-dashed border-gray-300">Prescription Empty</p>
           )}
         </div>
       </div>
 
-      {/* Possible AI Suggestions */}
+      {/* Section III: Alternatives */}
       {data.possible_suggestions && data.possible_suggestions.length > 0 && (
-        <div className="col-span-1 md:col-span-2 bg-yellow-50 p-6 rounded-2xl border border-yellow-100 mt-4">
-          <h3 className="text-sm font-bold text-yellow-700 uppercase tracking-widest mb-4 flex items-center">
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            Possible Suggestions
+        <div className="col-span-1 md:col-span-2 border-t-[0.5px] border-black p-8 bg-gray-50">
+          <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6 flex items-center">
+            Section III: Pharmacological Alternatives
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {data.possible_suggestions.map((sug, idx) => (
-              <div key={idx} className="bg-white p-4 rounded-xl border border-yellow-200 shadow-sm flex justify-between items-center group hover:border-yellow-400 transition-all">
-                <div className="flex-1 pr-4">
-                  <p className="text-sm font-semibold text-gray-800 italic">
-                    <span className="text-yellow-600 font-black uppercase tracking-tighter mr-1">Possible</span> {sug.label}
+              <div key={idx} className="flex justify-between items-start group">
+                <div className="flex-1 pr-6 border-l-[3px] border-black pl-4">
+                  <p className="text-lg font-black text-black leading-tight uppercase tracking-tighter">
+                    {sug.label}
                   </p>
-                  <p className="text-[10px] text-gray-500 mt-1 font-medium italic">{sug.reason}</p>
+                  <p className="text-[11px] text-gray-500 mt-2 font-light leading-relaxed italic antialiased">{sug.reason}</p>
                 </div>
                 <button 
                   onClick={() => data.onAddSuggestion?.(sug)}
-                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-2 rounded-lg transition-colors"
-                  title="Add to Prescription"
+                  className="bg-black text-white p-2 hover:bg-gray-800 transition-colors"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>

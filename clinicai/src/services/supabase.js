@@ -45,3 +45,18 @@ export async function getSessions(patientId) {
   if (error) throw error;
   return data;
 }
+
+export async function getPatientProfile(patientId) {
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .eq('patient_id', patientId)
+    .single();
+
+  if (error) {
+    console.error(`[ClinicAI | DB] - Profile FETCH FAILED for Patient: ${patientId}. Error:`, error.message);
+    return null;
+  }
+  
+  return data;
+}

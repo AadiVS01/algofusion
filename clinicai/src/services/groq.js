@@ -43,7 +43,7 @@ const SCHEMA = {
   required: ["language_detected", "chief_complaint", "diagnosis", "medications"]
 };
 
-export async function extractStructuredGroq(transcript, medicalContext = "", historyContext = "") {
+export async function extractStructuredGroq(transcript, medicalContext = "", historyContext = "", patientProfile = null) {
   const completion = await groq.chat.completions.create({
     messages: [
       {
@@ -63,13 +63,21 @@ RESILIENCE RULES:
 1. BACKGROUND NOISE: Ignore linguistic 'noise'. Prioritize clinical logic.
 2. AMBIGUITY: Check PATIENT HISTORY for "old medicine" references.
 3. PHONETIC SAFETY: Use MEDICAL CONTEXT (ICMR) to resolve similar drug names. IF A WORD SOUNDS LIKE A COMMON NOUN OR NON-MEDICAL PHRASE BUT IS IN A PRESCRIPTION CONTEXT, RECOVER THE MEDICAL TERM (e.g., "Citrus" or "Saturation" -> "Cetirizine", "cup of syrup" -> "Cough Syrup", "Amlo" -> "Amlodipine").
-4. PHARMACOLOGICAL SUGGESTIONS: Based on the diagnosis and symptoms, suggest 2-3 clinically relevant alternative medicines, adjunct therapies, or OTC supplements. STRICTLY FORBIDDEN: Do not suggest management steps or guidelines. ONLY suggest actual medications/drugs. Output the plain drug name in the 'label' field. Ensure the 'reason' field explains the specific medical relevance to the current session.`
+4. PHARMACOLOGICAL SUGGESTIONS: Based on the diagnosis and symptoms, suggest 2-3 clinically relevant alternative medicines, adjunct therapies, or OTC supplements. STRICTLY FORBIDDEN: Do not suggest management steps or guidelines. ONLY suggest actual medications/drugs. Output the plain drug name in the 'label' field. Ensure the 'reason' field explains the specific medical relevance to the current session.
+5. SAFETY AUDIT: Compare new medications against PATIENT PROFILE (Allergies/Conditions). If a conflict exists (e.g., prescribing a drug the patient is allergic to), set "flag": true for that medication and add a clear warning in the 'flags' array.`
       },
       {
         role: "user",
         content: `
         MEDICAL CONTEXT (ICMR Guidelines):
         ${medicalContext}
+
+        PATIENT PROFILE:
+        ${patientProfile ? JSON.stringify({
+          allergies: patientProfile.known_allergies,
+          conditions: patientProfile.chronic_conditions,
+          current_meds: patientProfile.current_medications
+        }) : "None Provided"}
 
         PATIENT HISTORY (Supabase Records):
         ${historyContext}

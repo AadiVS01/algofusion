@@ -13,91 +13,123 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans antialiased text-black overflow-hidden">
       <Head>
-        <title>ClinicAI | Patient Lookup</title>
+        <title>CLINICAI | REGISTRY</title>
       </Head>
 
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-indigo-100/50 p-8 border border-indigo-50">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg shadow-indigo-200">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
+      {/* Left Side: Branding & Editorial */}
+      <div className="lg:w-1/2 bg-black text-white p-12 lg:p-24 flex flex-col justify-between relative border-r-[0.5px] border-black">
+        <div>
+          <div className="flex items-center space-x-4 mb-24">
+             <div className="w-12 h-1 bg-white"></div>
+             <span className="text-[10px] font-black uppercase tracking-[0.6em]">Protocol Alpha-1</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">ClinicAI</h1>
-          <p className="text-gray-500 mt-2 text-sm font-medium italic">Empowering doctor-patient conversations</p>
+          <h1 className="text-8xl lg:text-9xl font-black uppercase tracking-tighter leading-[0.85] mb-8">
+            Clinic<br/>AI
+          </h1>
+          <p className="text-sm font-light uppercase tracking-[0.3em] opacity-60 max-w-xs leading-relaxed">
+            Neural Intake Registry & Clinical Intelligence Orchestrator.
+          </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex flex-col space-y-3">
-            <button 
-              onClick={handleCreateNew}
-              className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-200 hover:bg-indigo-700 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Start New Consultation
-            </button>
-            <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-widest">or lookup existing</p>
-          </div>
+        <div className="space-y-4">
+           <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-white animate-pulse"></div>
+              <span className="text-[10px] font-black uppercase tracking-widest">System Operational</span>
+           </div>
+           <p className="text-[9px] font-light text-gray-500 uppercase tracking-widest">
+             Powered by Groq Whisper Turbo & Llama 3.3 Versatile.
+           </p>
+        </div>
 
-          <div>
-            <label htmlFor="patientId" className="block text-sm font-bold text-gray-700 mb-2 ml-1">
-              Patient Identifier
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="patientId"
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                placeholder="Enter ID (e.g. P12345)"
-                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all text-sm font-medium outline-none text-gray-800 placeholder-gray-400"
-              />
+        {/* Decorative Newspaper Stripe */}
+        <div className="absolute right-0 top-0 bottom-0 w-[0.5px] bg-white/20"></div>
+      </div>
+
+      {/* Right Side: Operations */}
+      <div className="lg:w-1/2 bg-white p-12 lg:p-24 flex flex-col justify-center items-start">
+        <div className="max-w-md w-full space-y-16">
+          {/* Section: New Entry */}
+          <div className="space-y-8">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-400 border-b-[0.5px] border-gray-100 pb-4">
+              I. Initiation
+            </h3>
+            <div className="group">
+              <button 
+                onClick={handleCreateNew}
+                className="w-full bg-black text-white py-8 font-black uppercase tracking-[0.3em] transform hover:bg-gray-900 transition-all active:scale-[0.98] border-[0.5px] border-black group-hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,0.05)]"
+              >
+                Start New Consultation
+              </button>
+              <p className="mt-4 text-[9px] font-light text-gray-400 italic">Generates a unique clinical identifier (PID) for the session.</p>
             </div>
           </div>
 
-          <div className="flex grid grid-cols-2 gap-3 pt-2">
-            <Link 
-              href={`/consult?patientId=${patientId}`}
-              className={`text-center py-4 rounded-2xl font-bold text-white transition-all shadow-md ${
-                patientId ? 'bg-gray-800 hover:bg-black' : 'bg-gray-200 cursor-not-allowed'
-              }`}
-              onClick={(e) => !patientId && e.preventDefault()}
-            >
-              Resume
-            </Link>
-            
-            <Link 
-              href={`/history/${patientId}`}
-              className={`text-center py-4 rounded-2xl font-bold transition-all border-2 transform ${
-                patientId ? 'text-indigo-600 border-indigo-600 hover:bg-indigo-50' : 'text-gray-300 border-gray-200 cursor-not-allowed'
-              }`}
-              onClick={(e) => !patientId && e.preventDefault()}
-            >
-              History
-            </Link>
-          </div>
-        </div>
+          {/* Section: Patient Registry */}
+          <div className="space-y-8 pt-8">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-400 border-b-[0.5px] border-gray-100 pb-4">
+              II. Database Access
+            </h3>
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="patientId" className="block text-[10px] font-black uppercase tracking-widest text-black mb-4">
+                  Patient Identifier
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="patientId"
+                    value={patientId}
+                    onChange={(e) => setPatientId(e.target.value)}
+                    placeholder="ENTER ID (E.G. P12345)"
+                    className="w-full bg-white border-b-2 border-black py-4 text-2xl font-light uppercase tracking-tighter outline-none focus:placeholder:text-transparent transition-all"
+                  />
+                </div>
+              </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-100 flex justify-center space-x-6">
-          <div className="text-center">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Quick Start</p>
-            <button 
-              onClick={() => setPatientId('P12345')}
-              className="text-xs text-indigo-500 font-semibold hover:underline"
-            >
-              Use Mock Patient (P12345)
-            </button>
+              <div className="grid grid-cols-2 gap-0 border-[0.5px] border-black">
+                <Link 
+                  href={`/consult?patientId=${patientId}`}
+                  className={`py-8 text-center text-[11px] font-black uppercase tracking-widest border-r-[0.5px] border-black transition-all ${
+                    patientId ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-gray-200 cursor-not-allowed'
+                  }`}
+                  onClick={(e) => !patientId && e.preventDefault()}
+                >
+                  Resume
+                </Link>
+                
+                <Link 
+                  href={`/history/${patientId}`}
+                  className={`py-8 text-center text-[11px] font-black uppercase tracking-widest transition-all ${
+                    patientId ? 'bg-white text-black hover:bg-gray-50' : 'bg-white text-gray-200 cursor-not-allowed'
+                  }`}
+                  onClick={(e) => !patientId && e.preventDefault()}
+                >
+                  History
+                </Link>
+              </div>
+
+              <div className="flex justify-between items-center pt-4">
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-300">Quick Access:</span>
+                <button 
+                  onClick={() => setPatientId('P12345')}
+                  className="text-[10px] font-black uppercase tracking-widest text-black border-b-[2px] border-black hover:bg-black hover:text-white transition-all px-2 py-1"
+                >
+                  Load Mock ID: P12345
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       
-      <p className="mt-8 text-gray-400 text-xs font-medium uppercase tracking-widest">
-        Voice-Driven Clinic 9-Hour Sprint Edition
-      </p>
+      {/* Newspaper Footer Decoration */}
+      <div className="fixed bottom-8 right-8 hidden lg:block">
+         <p className="text-[10px] font-black uppercase tracking-[0.8em] text-black">
+            ClinicAI System v1.0
+         </p>
+      </div>
     </div>
   );
 }

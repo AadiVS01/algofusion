@@ -47,3 +47,9 @@ export async function queryRAG(patientId, question) {
   const data = await response.json();
   return data.answer;
 }
+
+export async function getPatientProfile(patientId) {
+  const response = await fetch(`/api/patients?patientId=${patientId}`);
+  if (!response.ok) return null;
+  return await response.json();
+}

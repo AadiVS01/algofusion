@@ -1,132 +1,147 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import useVoiceRecorder from '@/hooks/useVoiceRecorder';
 
 export default function RAGChatbot({ patientId }) {
-  const [query, setQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'system', content: `Hello, I can answer questions about the medical history of patient ${patientId || 'N/A'}.` }
+    { role: 'assistant', content: 'Patient Intelligence active. Awaiting clinical query.' }
   ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef(null);
 
   const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecorder();
 
-  // Sync voice transcript to input
   useEffect(() => {
-    if (transcript) setQuery(transcript);
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Sync mic-transcribed text to the input field
+  useEffect(() => {
+    if (transcript) setInput(transcript);
   }, [transcript]);
 
   const handleSend = async (e) => {
     if (e) e.preventDefault();
-    if (!query.trim()) return;
+    if (!input.trim()) return;
 
-    const userMessage = query.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setQuery('');
+    const userMessage = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
+    setInput('');
     setIsLoading(true);
-    
+
     try {
-      const response = await fetch('/api/rag', {
+      const res = await fetch('/api/rag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId: patientId || 'P12345', question: userMessage })
+        body: JSON.stringify({ patientId, question: currentInput })
       });
-      
-      const data = await response.json();
-      setMessages(prev => [...prev, { 
-        role: 'system', 
-        content: data.answer || "I couldn't find specific information on that." 
-      }]);
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'system', content: "Error connecting to clinical brain." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'SYSTEM ERROR: Intelligence bypass failed.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col h-full max-h-[650px] overflow-hidden">
-      {/* Premium Header */}
-      <div className="p-5 bg-gradient-to-r from-indigo-700 to-indigo-600 flex justify-between items-center shadow-md">
-        <h3 className="text-white font-bold flex items-center text-sm tracking-tight">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-          Clinical Brain Assistant
-        </h3>
-        {isLoading && (
-          <div className="flex space-x-1">
-            <div className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-          </div>
-        )}
+    <div className="flex flex-col h-[600px] bg-white border-[0.5px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,0.05)]">
+      {/* Header */}
+      <div className="p-4 border-b-[0.5px] border-black bg-black text-white flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-white animate-pulse"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.3em]">Neural Interface v1.0</span>
+        </div>
+        <div className="flex space-x-1">
+          <div className="w-1 h-3 bg-white opacity-20"></div>
+          <div className="w-1 h-3 bg-white opacity-40"></div>
+          <div className="w-1 h-3 bg-white opacity-60"></div>
+        </div>
       </div>
-      
-      {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-gray-50/30">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[88%] p-4 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
-              msg.role === 'user' 
-                ? 'bg-indigo-600 text-white rounded-tr-none' 
-                : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white custom-scrollbar">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] ${
+              m.role === 'user' 
+                ? 'bg-white border-b-2 border-black p-0 text-right' 
+                : 'bg-white border-l-4 border-black pl-4 py-1'
             }`}>
-              {msg.content}
+              <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 ${
+                m.role === 'user' ? 'text-gray-400' : 'text-black'
+              }`}>
+                {m.role === 'assistant' ? 'Intelligence Response' : 'Analyst Query'}
+              </p>
+              <p className={`text-sm leading-relaxed antialiased ${
+                m.role === 'user' ? 'font-black text-xl italic tracking-tighter' : 'font-light italic text-gray-800'
+              }`}>
+                {m.content}
+              </p>
             </div>
           </div>
         ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm flex items-center space-x-3">
-              <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
-              </div>
-              <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-widest">Consulting Medical Wisdom...</span>
+        
+        {isRecording && (
+          <div className="flex justify-end">
+            <div className="bg-white border-b-2 border-gray-200 p-0 text-right">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 text-gray-300">Listening...</p>
+              <p className="text-xl font-black italic tracking-tighter text-gray-300 animate-pulse">
+                {transcript || "Speak now..."}
+              </p>
             </div>
           </div>
         )}
-      </div>
-      
-      {/* Input Area */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        <form onSubmit={handleSend} className="flex items-center space-x-3">
-          <button 
-            type="button"
-            onClick={isRecording ? stopRecording : startRecording}
-            className={`p-3 rounded-xl transition-all shadow-sm ${
-              isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-            }`}
-            title={isRecording ? "Stop Voice Input" : "Start Voice Input"}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-          </button>
-          
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={isRecording ? "Listening to your query..." : "Ask history or clinical guidelines..."}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-400 shadow-inner"
-            />
+
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white border-l-4 border-gray-200 pl-4 py-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 text-gray-300">Neural Sync</p>
+              <p className="text-sm font-light text-gray-300 italic">Accessing clinical vectors...</p>
+            </div>
           </div>
-          
-          <button 
-            type="submit"
-            disabled={isLoading || !query.trim()}
-            className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
-        </form>
-        {isRecording && (
-          <p className="mt-2 text-center text-[10px] font-bold text-red-500 uppercase tracking-tighter animate-pulse">
-            Recording Active • Speak clearly
-          </p>
         )}
+        <div ref={scrollRef} />
+      </div>
+
+      {/* Input Bar */}
+      <div className="p-4 border-t-[0.5px] border-black bg-gray-50">
+        <form onSubmit={handleSend} className="flex items-center space-x-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={isRecording ? "LISTENING..." : "ENTER COMMAND..."}
+            className="flex-1 bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none placeholder:text-gray-300"
+            disabled={isRecording}
+          />
+          
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`p-2 transition-all border-[0.5px] ${
+                isRecording 
+                  ? 'bg-black text-white border-black animate-pulse' 
+                  : 'bg-white text-black border-black hover:bg-black hover:text-white'
+              }`}
+              title={isRecording ? "Stop Recording" : "Voice Query"}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+            
+            <button
+              type="submit"
+              disabled={isRecording || !input.trim()}
+              className="bg-black text-white px-6 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+            >
+              Execute
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

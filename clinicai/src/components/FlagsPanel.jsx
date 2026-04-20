@@ -4,23 +4,28 @@ export default function FlagsPanel({ flags }) {
   if (!flags || flags.length === 0) return null;
 
   return (
-    <div className="mt-6 bg-red-50 border border-red-100 p-4 rounded-xl">
-      <div className="flex items-center space-x-2 mb-3">
-        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+    <div className="bg-black p-6 border-[0.5px] border-black">
+      <div className="flex items-center space-x-2 mb-6">
+        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span className="text-sm font-bold text-red-700 uppercase tracking-wide">Documentation Flags</span>
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Clinical Alerts</h3>
       </div>
+      
       <div className="flex flex-wrap gap-2">
         {flags.map((flag, idx) => (
-          <span 
+          <div 
             key={idx} 
-            className="px-3 py-1 bg-white border border-red-200 text-red-700 text-xs font-medium rounded-full shadow-sm"
+            className="border-[0.5px] border-white text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all cursor-default"
           >
             {flag}
-          </span>
+          </div>
         ))}
       </div>
+      
+      <p className="text-[9px] text-gray-500 mt-6 font-light uppercase tracking-widest leading-loose">
+        Note: Alerts are AI-detected. Please verify against ICMR Pharmacopeia standards.
+      </p>
     </div>
   );
 }

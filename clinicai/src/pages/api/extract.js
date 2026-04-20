@@ -1,7 +1,7 @@
 import { extractStructuredGroq } from '@/services/groq';
 import { getEmbeddings } from '@/services/gemini';
 import { queryMedicalKB } from '@/services/pinecone';
-import { getSessions } from '@/services/supabase';
+import { getSessions, getPatientProfile } from '@/services/supabase';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
@@ -19,12 +19,11 @@ export default async function handler(req, res) {
     const medicalReference = await queryMedicalKB(vector);
     const medicalContext = medicalReference.map(m => m.text).join('\n');
     
-    // 3. Query Supabase for Patient Memory
-    const historyData = await getSessions(patientId);
-    const historyContext = JSON.stringify(historyData);
-
-    // 4. Extract with Full Context (via Groq)
-    const data = await extractStructuredGroq(transcript, medicalContext, historyContext);
+    // 4. Query Patient Meta (Allergies/Conditions)
+    const patientProfile = await getPatientProfile(patientId);
+    
+    // 5. Extract with Full Context (via Groq)
+    const data = await extractStructuredGroq(transcript, medicalContext, historyContext, patientProfile);
     
     console.log(`[ClinicAI | AI] - Extraction SUCCESS for Patient: ${patientId}`);
     res.status(200).json(data);
