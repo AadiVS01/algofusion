@@ -76,7 +76,7 @@ export default function ConsultPage() {
       ...prev,
       medications: [
         ...(prev.medications || []),
-        { name: suggestion.label.replace('POSSIBLE ', ''), dosage: "As per protocol", frequency: "Check guidelines", duration: "Check guidelines", flag: false }
+        { name: suggestion.label, dosage: "As per protocol", frequency: "Check guidelines", duration: "Check guidelines", flag: false }
       ],
       possible_suggestions: prev.possible_suggestions.filter(s => s.label !== suggestion.label)
     }));

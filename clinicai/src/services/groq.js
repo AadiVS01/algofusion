@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import fs from "fs";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -47,7 +48,8 @@ export async function extractStructuredGroq(transcript, medicalContext = "", his
     messages: [
       {
         role: "system",
-        content: `You are a clinical documentation AI. Extract structured medical data from clinical transcripts (English). 
+        content: `You are a clinical documentation AI. Extract structured medical data from clinical transcripts. 
+STRICT REQUIREMENT: Always respond in English.
 Return ONLY valid JSON according to this SCHEMA: ${JSON.stringify(SCHEMA)}
 
 PRESCRIPTION PRECISION:
@@ -55,12 +57,13 @@ PRESCRIPTION PRECISION:
 - Example mapping:
   Input: "Take Paracetamol 500mg twice a day after lunch for 3 days"
   Output Part: {"name": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day", "timing": "After Lunch", "duration": "3 days"}
+- STRICT FORBIDDEN ITEMS: NEVER include clinical protocols, management steps, or general advice (e.g., "Fever Management", "Rest", "Increase fluids") in the 'medications' array. Only include valid drug or syrup names.
 
 RESILIENCE RULES:
 1. BACKGROUND NOISE: Ignore linguistic 'noise'. Prioritize clinical logic.
 2. AMBIGUITY: Check PATIENT HISTORY for "old medicine" references.
-3. PHONETIC SAFETY: Use MEDICAL CONTEXT (ICMR) to resolve similar drug names.
-4. SUGGESTIONS: Generate ICMR-based management steps. Prefix with "POSSIBLE".`
+3. PHONETIC SAFETY: Use MEDICAL CONTEXT (ICMR) to resolve similar drug names. IF A WORD SOUNDS LIKE A COMMON NOUN OR NON-MEDICAL PHRASE BUT IS IN A PRESCRIPTION CONTEXT, RECOVER THE MEDICAL TERM (e.g., "Citrus" or "Saturation" -> "Cetirizine", "cup of syrup" -> "Cough Syrup", "Amlo" -> "Amlodipine").
+4. PHARMACOLOGICAL SUGGESTIONS: Based on the diagnosis and symptoms, suggest 2-3 clinically relevant alternative medicines, adjunct therapies, or OTC supplements. STRICTLY FORBIDDEN: Do not suggest management steps or guidelines. ONLY suggest actual medications/drugs. Output the plain drug name in the 'label' field. Ensure the 'reason' field explains the specific medical relevance to the current session.`
       },
       {
         role: "user",
@@ -88,7 +91,7 @@ export async function queryRAGGroq(patientId, query, historyContext) {
     messages: [
       {
         role: "system",
-        content: "You are a clinical assistant. Use patient history and medical protocols to answer queries concisely."
+        content: "You are a clinical assistant. Use patient history and medical protocols to answer queries concisely. STRICT REQUIREMENT: Always respond in English."
       },
       {
         role: "user",
@@ -104,4 +107,22 @@ export async function queryRAGGroq(patientId, query, historyContext) {
   });
 
   return completion.choices[0].message.content;
+}
+
+export async function transcribeGroq(filePath) {
+  try {
+    const transcription = await groq.audio.transcriptions.create({
+      file: fs.createReadStream(filePath),
+      model: "whisper-large-v3-turbo", 
+      prompt: "Cetirizine, Paracetamol, Amoxicillin, Amlodipine, Metformin, Atorvastatin, Omeprazole, Azithromycin, Cough Syrup, Saturation, Clinical Prescription, Diagnosis, Symptoms.", // Medical nudge
+      response_format: "json",
+      language: "en",
+      temperature: 0.0,
+    });
+
+    return { transcript: transcription.text };
+  } catch (error) {
+    console.error("Groq Transcription Error:", error);
+    throw error;
+  }
 }

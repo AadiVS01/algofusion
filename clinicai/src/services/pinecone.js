@@ -30,3 +30,26 @@ export async function queryMedicalKB(vector, topK = 3) {
     score: match.score
   }));
 }
+
+export async function upsertMedicalKB(vectors) {
+  const url = `https://${PINECONE_HOST}/vectors/upsert`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Api-Key': PINECONE_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      namespace: 'clinical-wisdom',
+      vectors: vectors
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Pinecone upsert error: ${error.message || response.statusText}`);
+  }
+
+  return await response.json();
+}
