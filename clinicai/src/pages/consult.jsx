@@ -8,8 +8,8 @@ import FlagsPanel from '@/components/FlagsPanel';
 import useVoiceRecorder from '@/hooks/useVoiceRecorder';
 import RAGChatbot from '@/components/RAGChatbot';
 import { transcribeAudio, extractStructured, saveSession, getPatientProfile } from '../../contract';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import QRCode from 'react-qr-code';
+import { generatePatientPDF } from '@/utils/generatePatientPDF';
 
 export default function ConsultPage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function ConsultPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingData, setIsEditingData] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [savedSessionId, setSavedSessionId] = useState(null);
   const [patientProfile, setPatientProfile] = useState(null);
 
   useEffect(() => {
@@ -89,7 +90,8 @@ export default function ConsultPage() {
 
   const handleSave = async () => {
     try {
-      await saveSession(patientId || 'P12345', structuredData);
+      const saved = await saveSession(patientId || 'P12345', structuredData);
+      setSavedSessionId(saved.id);
       setIsSaved(true);
       alert('Session saved successfully!');
       setIsEditingData(false);
@@ -98,56 +100,7 @@ export default function ConsultPage() {
     }
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("CLINIC AI | MEDICAL PRESCRIPTION", 14, 22);
-    
-    // Patient Header Details
-    doc.setFontSize(10);
-    doc.text(`Patient Name: ${patientProfile?.name || 'N/A'}`, 14, 32);
-    doc.text(`Age/Gender: ${patientProfile?.age || 'N/A'}Y / ${patientProfile?.gender || 'N/A'}`, 14, 37);
-    doc.text(`Blood Group: ${patientProfile?.blood_group || 'N/A'}`, 14, 42);
-    doc.text(`Patient ID: ${patientId || 'P12345'}`, 140, 32);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 37);
-
-    doc.setLineWidth(0.5);
-    doc.line(14, 48, 196, 48);
-    
-    doc.setFontSize(12);
-    doc.text("Clinical Findings", 14, 58);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Chief Complaint:", 14, 66);
-    doc.setFont("helvetica", "normal");
-    doc.text(structuredData.chief_complaint || "N/A", 50, 66);
-    
-    doc.setFont("helvetica", "bold");
-    doc.text("Diagnosis:", 14, 74);
-    doc.setFont("helvetica", "normal");
-    doc.text(structuredData.diagnosis || "N/A", 50, 74, { maxWidth: 140 });
-
-    if (structuredData.medications && structuredData.medications.length > 0) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Prescription (Rx)", 14, 105); // Move down
-      autoTable(doc, {
-        startY: 110,
-        head: [['Medicine', 'Dosage', 'Frequency', 'Timing', 'Duration']],
-        body: structuredData.medications.map(m => [m.name, m.dosage, m.frequency, m.timing, m.duration]),
-        theme: 'striped',
-        headStyles: { fillColor: [0, 0, 0] },
-      });
-    }
-
-    const finalY = doc.lastAutoTable?.finalY || 110;
-    doc.setFont("helvetica", "bold");
-    doc.text("Advice & Follow-up:", 14, finalY + 15);
-    doc.setFont("helvetica", "normal");
-    doc.text(structuredData.follow_up || "General care advised.", 14, finalY + 22, { maxWidth: 180 });
-
-    doc.save(`Prescription_${patientId || 'Patient'}_Report.pdf`);
-  };
+  const reportUrl = typeof window !== 'undefined' ? `${window.location.origin}/report/${savedSessionId}` : '';
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-black">
@@ -169,7 +122,7 @@ export default function ConsultPage() {
         <div className="flex items-center space-x-4">
           {isSaved && (
             <button 
-              onClick={generatePDF}
+              onClick={() => generatePatientPDF(structuredData, patientId || 'P12345', patientProfile)}
               className="px-6 py-2 bg-black text-white text-[12px] font-black uppercase tracking-widest hover:bg-gray-900 transition-all font-sans"
             >
               Export PDF
@@ -194,6 +147,17 @@ export default function ConsultPage() {
           </button>
         </div>
       </nav>
+      {savedSessionId && (
+        <div className="px-8 py-4 border-b-[0.5px] border-black bg-white">
+          <div className="inline-flex flex-col items-center gap-2 border-[0.5px] border-black p-4">
+            <QRCode value={reportUrl} size={96} />
+            <p className="text-xs text-gray-700">Scan to share with patient</p>
+            <a href={reportUrl} target="_blank" rel="noreferrer" className="text-xs underline break-all">
+              {reportUrl}
+            </a>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 max-w-none w-full grid grid-cols-1 lg:grid-cols-12">
         {/* Left Column: Recording & Output */}
