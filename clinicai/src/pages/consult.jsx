@@ -8,6 +8,8 @@ import FlagsPanel from '@/components/FlagsPanel';
 import useVoiceRecorder from '@/hooks/useVoiceRecorder';
 import RAGChatbot from '@/components/RAGChatbot';
 import { transcribeAudio, extractStructured, saveSession } from '../../contract';
+import { getPatient } from '@/services/supabase';
+import { jsPDF } from 'jspdf';
 
 export default function ConsultPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function ConsultPage() {
   const [structuredData, setStructuredData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingData, setIsEditingData] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
   // Sync live transcript from hook
   useEffect(() => {
@@ -92,6 +95,172 @@ export default function ConsultPage() {
     }
   };
 
+  const handleDownloadReport = async () => {
+    if (!structuredData) return;
+
+    setIsDownloadingReport(true);
+    try {
+      const resolvedPatientId = patientId || 'P12345';
+      const patient = await getPatient(resolvedPatientId);
+
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      const ensurePageSpace = (required = 10) => {
+        if (y + required > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+      };
+
+      const drawDivider = () => {
+        ensurePageSpace(6);
+        doc.setDrawColor(210, 210, 210);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 6;
+      };
+
+      const drawSectionHeading = (text) => {
+        ensurePageSpace(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(text.toUpperCase(), margin, y);
+        y += 6;
+      };
+
+      const drawBodyLine = (label, value) => {
+        ensurePageSpace(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`${label}:`, margin, y);
+        doc.setFont('helvetica', 'normal');
+        const wrapped = doc.splitTextToSize(value || 'N/A', contentWidth - 30);
+        doc.text(wrapped, margin + 30, y);
+        y += Math.max(5, wrapped.length * 4.5);
+      };
+
+      const drawSimpleTable = (headers, rows) => {
+        const colWidth = contentWidth / headers.length;
+        const rowHeight = 7;
+        ensurePageSpace(12);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        headers.forEach((header, index) => {
+          const x = margin + colWidth * index;
+          doc.rect(x, y, colWidth, rowHeight);
+          doc.text(header, x + 2, y + 4.7);
+        });
+        y += rowHeight;
+
+        doc.setFont('helvetica', 'normal');
+        rows.forEach((row) => {
+          ensurePageSpace(rowHeight + 2);
+          row.forEach((cell, index) => {
+            const x = margin + colWidth * index;
+            doc.rect(x, y, colWidth, rowHeight);
+            const text = doc.splitTextToSize(String(cell || '-'), colWidth - 3);
+            doc.text(text[0] || '-', x + 2, y + 4.7);
+          });
+          y += rowHeight;
+        });
+      };
+
+      const now = new Date();
+      const timestamp = now.toLocaleString();
+      const dateForFile = now.toISOString().slice(0, 10);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('ClinicAI - Consultation Report', margin, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Generated at: ${timestamp}`, margin, y);
+      y += 5;
+
+      drawDivider();
+
+      drawSectionHeading('Patient Info');
+      drawBodyLine('Name', patient?.name || 'Unknown');
+      drawBodyLine('ID', resolvedPatientId);
+      drawBodyLine('Age', patient?.age ? String(patient.age) : 'Unknown');
+      drawBodyLine('Gender', patient?.gender || 'Unknown');
+      drawBodyLine('Blood Group', patient?.blood_group || 'Unknown');
+      drawBodyLine('Contact', patient?.contact || 'Unknown');
+
+      drawDivider();
+
+      drawSectionHeading('Chief Complaint');
+      drawBodyLine('Complaint', structuredData.chief_complaint || 'N/A');
+
+      drawSectionHeading('Symptoms');
+      const symptomRows = (structuredData.symptoms || []).map((item) => {
+        if (typeof item === 'string') {
+          return [item, structuredData.duration || '-', '-'];
+        }
+        return [item.symptom || item.name || '-', item.duration || structuredData.duration || '-', item.severity || '-'];
+      });
+      drawSimpleTable(['Symptom', 'Duration', 'Severity'], symptomRows.length ? symptomRows : [['-', '-', '-']]);
+
+      drawSectionHeading('Diagnosis');
+      drawBodyLine('Diagnosis', structuredData.diagnosis || 'N/A');
+
+      drawSectionHeading('Medications');
+      const medicationRows = (structuredData.medications || []).map((med) => [
+        med.name || '-',
+        med.dosage || '-',
+        med.frequency || '-',
+        med.duration || '-',
+      ]);
+      drawSimpleTable(
+        ['Name', 'Dosage', 'Frequency', 'Duration'],
+        medicationRows.length ? medicationRows : [['-', '-', '-', '-']]
+      );
+
+      drawSectionHeading('Follow-up');
+      drawBodyLine('Plan', structuredData.follow_up || 'N/A');
+
+      drawSectionHeading('AI Flags');
+      const flags = structuredData.flags || [];
+      if (!flags.length) {
+        drawBodyLine('Status', 'No active warnings');
+      } else {
+        flags.forEach((flag) => {
+          ensurePageSpace(6);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          const wrappedFlag = doc.splitTextToSize(`⚠ ${flag}`, contentWidth);
+          doc.text(wrappedFlag, margin, y);
+          y += wrappedFlag.length * 4.5;
+        });
+      }
+
+      drawSectionHeading('Confidence');
+      drawBodyLine('Score', structuredData.confidence || 'N/A');
+
+      ensurePageSpace(14);
+      y = Math.max(y, pageHeight - margin - 12);
+      doc.setDrawColor(210, 210, 210);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Generated by ClinicAI | ${dateForFile} | Doctor's Signature: ___________`, margin, y);
+
+      doc.save(`ClinicAI_Report_${resolvedPatientId}_${dateForFile}.pdf`);
+    } catch (error) {
+      console.error('Report generation failed:', error);
+      alert('Failed to generate report');
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Head>
@@ -128,6 +297,16 @@ export default function ConsultPage() {
           >
             Save Session
           </button>
+          {structuredData && (
+            <button
+              onClick={handleDownloadReport}
+              disabled={isDownloadingReport}
+              className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors shadow-lg disabled:opacity-50 flex items-center"
+            >
+              <span className="mr-2">📄</span>
+              {isDownloadingReport ? 'Generating...' : 'Download Report'}
+            </button>
+          )}
         </div>
       </nav>
 

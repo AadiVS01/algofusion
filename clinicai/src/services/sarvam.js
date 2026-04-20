@@ -1,3 +1,9 @@
+/**
+ * Transcription service — uses Groq Whisper (whisper-large-v3) via /api/transcribe.
+ *
+ * The actual Groq call lives in the API route; this client-side helper
+ * posts the audio blob to that endpoint.
+ */
 export async function transcribeAudio(audioData, filename = 'audio.wav') {
   const formData = new FormData();
   
@@ -6,20 +12,14 @@ export async function transcribeAudio(audioData, filename = 'audio.wav') {
     : audioData;
 
   formData.append('file', blob, filename);
-  formData.append('model', 'saaras:v3');
-  formData.append('language_code', 'hi-IN');
-  formData.append('mode', 'translate');
 
-  const response = await fetch('https://api.sarvam.ai/speech-to-text', {
+  const response = await fetch('/api/transcribe', {
     method: 'POST',
-    headers: {
-      'api-subscription-key': process.env.SARVAM_API_KEY
-    },
-    body: formData
+    body: formData,
   });
 
   if (!response.ok) {
-    let errorMessage = `Sarvam API error: ${response.statusText}`;
+    let errorMessage = `Transcription API error: ${response.statusText}`;
     try {
       const errorData = await response.json();
       errorMessage = JSON.stringify(errorData) || errorMessage;

@@ -45,3 +45,25 @@ export async function getSessions(patientId) {
   if (error) throw error;
   return data;
 }
+
+export const createPatient = async (patientData) => {
+  const { data, error } = await supabase
+    .from('patients')
+    .insert([patientData])
+    .select('patient_id')
+    .single();
+
+  if (error) throw error;
+  return { patientId: data.patient_id };
+};
+
+export const getPatient = async (patientId) => {
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .eq('patient_id', patientId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || null;
+};

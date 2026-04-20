@@ -42,7 +42,7 @@ const SCHEMA = {
   required: ["language_detected", "chief_complaint", "diagnosis", "medications"]
 };
 
-export async function extractStructuredGroq(transcript, medicalContext = "", historyContext = "") {
+export async function extractStructuredGroq(transcript, medicalContext = "", historyContext = "", patientContext = "") {
   const completion = await groq.chat.completions.create({
     messages: [
       {
@@ -70,6 +70,9 @@ RESILIENCE RULES:
 
         PATIENT HISTORY (Supabase Records):
         ${historyContext}
+
+        PATIENT CONTEXT:
+        ${patientContext}
 
         CURRENT TRANSCRIPT:
         ${transcript}
