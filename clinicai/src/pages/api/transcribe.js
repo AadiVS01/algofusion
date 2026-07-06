@@ -25,10 +25,11 @@ export default async function handler(req, res) {
     const audioFile = files.file ? files.file[0] : null;
     if (!audioFile) throw new Error('No audio file provided');
     
-    // Fix: Groq Whisper requires a supported extension (e.g. .wav, .mp3) to recognize the file type.
-    // Formidable often saves files to a temp directory with a name like 'blob' or a random hash without an extension.
+    // Fix: Groq Whisper requires a supported extension to recognize the file type.
+    // Formidable often saves files without an extension.
     const tempDir = path.dirname(audioFile.filepath);
-    const fileNameWithExt = `${audioFile.newFilename || 'audio'}.wav`;
+    const originalExt = path.extname(audioFile.originalFilename || 'audio.webm') || '.webm';
+    const fileNameWithExt = `${audioFile.newFilename || 'audio'}${originalExt}`;
     const newPath = path.join(tempDir, fileNameWithExt);
     
     fs.renameSync(audioFile.filepath, newPath);

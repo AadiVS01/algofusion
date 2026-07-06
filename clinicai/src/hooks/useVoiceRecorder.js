@@ -52,7 +52,7 @@ export default function useVoiceRecorder() {
       };
       
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         setAudioBlob(blob);
       };
       
