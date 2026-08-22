@@ -87,7 +87,7 @@ RESILIENCE RULES:
         `
       }
     ],
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
     response_format: { type: "json_object" }
   });
 
@@ -113,7 +113,7 @@ export async function queryRAGGroq(patientId, query, historyContext) {
         `
       }
     ],
-    model: "llama-3.3-70b-versatile"
+    model: "openai/gpt-oss-120b"
   });
 
   return completion.choices[0].message.content;

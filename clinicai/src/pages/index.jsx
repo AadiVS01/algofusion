@@ -38,7 +38,7 @@ export default function Home() {
             <span className="text-[10px] font-black uppercase tracking-widest">System Operational</span>
           </div>
           <p className="text-[9px] font-light text-gray-500 uppercase tracking-widest">
-            Powered by Groq Whisper Turbo & Llama 3.3 Versatile.
+            Powered by Groq Whisper Turbo & GPT OSS 120B.
           </p>
         </div>
 

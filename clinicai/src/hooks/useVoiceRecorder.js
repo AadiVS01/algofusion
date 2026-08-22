@@ -8,6 +8,11 @@ export default function useVoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const recognitionRef = useRef(null);
+  const isRecordingRef = useRef(isRecording);
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -29,7 +34,7 @@ export default function useVoiceRecorder() {
 
       recognitionRef.current.onend = () => {
         // Restart if we're still in recording mode (prevents timeout on long pauses)
-        if (isRecording) {
+        if (isRecordingRef.current) {
           try {
             recognitionRef.current.start();
           } catch (e) { /* already started */ }
@@ -42,6 +47,7 @@ export default function useVoiceRecorder() {
     if (typeof window === 'undefined') return;
     chunksRef.current = [];
     setTranscript('');
+    setAudioBlob(null);
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
